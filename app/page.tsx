@@ -1,101 +1,129 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
+import { motion, AnimatePresence } from "framer-motion"
+
+const TIMER_DURATION = 25 * 60
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [time, setTime] = useState(TIMER_DURATION)
+  const [isActive, setIsActive] = useState(false)
+  const [isBreak, setIsBreak] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+
+    if (isActive && time > 0) {
+      interval = setInterval(() => {
+        setTime((prevTime) => prevTime - 1)
+      }, 1000)
+    } else if (time === 0) {
+      setIsBreak(!isBreak)
+      setTime(isBreak ? TIMER_DURATION : 5 * 60)
+      setIsActive(false)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isActive, time, isBreak])
+
+  const toggleTimer = () => setIsActive(!isActive)
+  const resetTimer = () => {
+    setTime(TIMER_DURATION)
+    setIsActive(false)
+    setIsBreak(false)
+  }
+
+  const minutes = Math.floor(time / 60)
+  const seconds = time % 60
+
+  const progress = (TIMER_DURATION - time) / TIMER_DURATION * 100
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-600 p-4">
+      <Card className="w-full max-w-md p-8 bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-3xl shadow-xl">
+        <motion.h1 
+          className="text-4xl font-bold text-center text-white mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {isBreak ? 'Break Time' : 'Focus Time'}
+        </motion.h1>
+        <div className="relative">
+          <svg className="w-full h-64" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke="#ffffff33"
+              strokeWidth="8"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <motion.circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${progress}, 100`}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: progress / 100 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            />
+          </svg>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={time}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3 }}
+                className="text-6xl font-bold text-white"
+              >
+                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+        <div className="flex justify-center space-x-4 mt-8">
+          <Button
+            onClick={toggleTimer}
+            className={`px-6 py-2 rounded-full text-lg transition-all duration-300 ${
+              isActive
+                ? 'bg-red-500 hover:bg-red-600'
+                : 'bg-green-500 hover:bg-green-600'
+            }`}
+          >
+            {isActive ? 'Pause' : 'Start'}
+          </Button>
+          <Button
+            onClick={resetTimer}
+            className="px-6 py-2 rounded-full text-lg bg-yellow-500 hover:bg-yellow-600 transition-all duration-300"
+          >
+            Reset
+          </Button>
+        </div>
+        <div className="mt-8">
+          <Slider
+            defaultValue={[TIMER_DURATION]}
+            max={TIMER_DURATION}
+            step={1}
+            value={[time]}
+            onValueChange={([newTime]) => setTime(newTime)}
+            disabled={isActive}
+            className="w-full"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </Card>
     </div>
-  );
+  )
 }
+
